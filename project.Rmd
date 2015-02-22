@@ -1,0 +1,100 @@
+## Practical Machine Learning - Course Project
+
+
+
+### Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset). 
+
+### Data 
+
+The training data for this project are available here: 
+    
+    https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here: 
+    
+    https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+### Data Preparation
+The above data sets were downloaded and placed in the current working directory.
+```{r}
+data<-read.csv("pml-training.csv", na.strings=c("NA", "", "#DIV/0!"))
+dim(data)
+```
+
+The data contains 160 variables, many of which consist entirely of NA values (see Appendix A and B). This step removes all variables having at least 1 NA. It also removes the first 7 variables which appear to be meta data unrelated to the model. The resulting data set includes 53 variables.
+```{r}
+data<-data[,colSums(is.na(data))==0]
+data<-data[,-c(1:7)]
+```
+
+Next, I split the data into training and testing subsets with a 70/30 ratio.
+```{r, message=FALSE}
+set.seed(1)
+library(caret)
+
+inTrain=createDataPartition(y=data$classe, p=0.7, list=FALSE)
+training=data[inTrain,]
+testing=data[-inTrain,]
+dim(training); dim(testing)
+```
+
+### Model
+Using the traing set, I apply random forest modelling without tuning.
+```{r, message=FALSE}
+library(randomForest)
+#model<-randomForest(classe ~. , data=training, method="class")
+model<-readRDS("model.rds") #use cached version
+prediction<-predict(model, testing, type="class")
+confusion<-confusionMatrix(prediction, testing$classe)
+confusion
+```
+This model is `r round(confusion$overall['Accuracy']*100, 4)`% accurate.
+
+
+### Conclusion
+With 53 variables, the model is able to distinguish between 5 different event categories with `r round(confusion$overall['Accuracy']*100, 4)`% accuracy.
+
+### Submittal
+```{r, eval=FALSE}
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+
+test<-read.csv("pml-testing.csv", na.strings=c("NA", "", "#DIV/0!"))
+test<-test[,c(colnames(data[,-53]))]
+test[, c(39,51,52)] <- sapply(test[, c(39,51,52)], as.numeric)
+
+answers <- predict(model, newdata=test)
+
+pml_write_files(answers)
+```
+
+### References
+
+Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
+
+Read more: http://groupware.les.inf.puc-rio.br/har#dataset#ixzz3SVWB4IKj
+
+
+Read more: http://groupware.les.inf.puc-rio.br/har#ixzz3SVVIdFV2
+
+
+### Appendix A
+#### Variables having NA values
+```{r}
+training<-read.csv("pml-training.csv", na.strings=c("NA", "", "#DIV/0!"))
+str(training)
+```
+
+### Appendix B
+#### Remaining variables once NA is removed
+```{r}
+training<-training[,colSums(is.na(training))==0]
+str(training)
+```
