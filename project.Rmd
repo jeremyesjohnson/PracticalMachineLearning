@@ -50,11 +50,10 @@ prediction<-predict(model, testing, type="class")
 confusion<-confusionMatrix(prediction, testing$classe)
 confusion
 ```
-This model is `r round(confusion$overall['Accuracy']*100, 4)`% accurate.
-
+This model is `r round(confusion$overall['Accuracy']*100, 4)`% accurate. The expected out-of-sample error is 1-accuracy or `r round((1-confusion$overall['Accuracy'])*100, 2)`%.
 
 ### Conclusion
-With 53 variables, the model is able to distinguish between 5 different event categories with `r round(confusion$overall['Accuracy']*100, 4)`% accuracy.
+With 53 variables, the model is able to distinguish between 5 different event categories with `r round(confusion$overall['Accuracy']*100, 2)`% accuracy.
 
 ### Submittal
 ```{r, eval=FALSE}
